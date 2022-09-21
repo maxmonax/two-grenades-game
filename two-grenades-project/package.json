@@ -1,0 +1,31 @@
+{
+  "name": "@faraway/two-grenades",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./src/GameStarter.ts",
+  "scripts": {
+    "start": "webpack-dev-server",
+    "start:open": "webpack-dev-server --open",
+    "prod": "webpack --mode=production"
+  },
+  "author": "Monax",
+  "license": "ISC",
+  "devDependencies": {
+    "ts-loader": "^6.2.1",
+    "ts-shader-loader": "^2.0.1",
+    "tslint": "^6.0.0",
+    "typescript": "^3.8.3",
+    "webpack": "^4.41.6",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.11.2"
+  },
+  "dependencies": {
+    "@types/dat.gui": "^0.7.5",
+    "@types/stats": "^0.16.30",
+    "dat.gui": "^0.7.6",
+    "gsap": "^3.10.4",
+    "postprocessing": "^6.22.2",
+    "stats-js": "^1.0.1",
+    "three": "^0.120.1"
+  }
+}
