@@ -5,7 +5,7 @@ export enum TextureAlias {
     skybox = 'skybox',
 };
 
-export const TEXTURE_LOAD_DATA = [
+export const TEXTURE_LOAD_LIST = [
     { alias: TextureAlias.grass, file: 'textures/Grass.png' },
     { alias: TextureAlias.bricks, file: 'textures/Bricks.png' },
     { alias: TextureAlias.skybox, file: `textures/skybox/Sky_Daytime_4k_128color.png` }

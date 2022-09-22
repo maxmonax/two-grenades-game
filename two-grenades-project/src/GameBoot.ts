@@ -1,8 +1,8 @@
-import { Preloader } from './Preloader';
-import { GameEngine } from './GameEngine';
-import { Config } from './data/Config';
+import { GameLoader } from './GameLoader';
+import { GameRender } from './GameRender';
 import { LogMng } from "./utils/LogMng";
 import * as MyUtils from './utils/MyUtils';
+import { Settings } from './data/Settings';
 
 type InitParams = {
     assetsPath: string;
@@ -11,10 +11,10 @@ type InitParams = {
     onLoadComplete?: () => void;
 };
 
-export class GameStarter {
+export class GameBoot {
 
     private _initParams: InitParams;
-    private _preloader: Preloader;
+    private _preloader: GameLoader;
     private _inited = false;
 
     init(aParams: InitParams) {
@@ -28,15 +28,14 @@ export class GameStarter {
         this._initParams = aParams;
 
         // init debug mode
-        Config.isDebugMode = window.location.hash === '#debug';
+        Settings.isDebugMode = window.location.hash === '#debug';
 
         // LogMng settings
-        if (!Config.isDebugMode) LogMng.setMode(LogMng.MODE_RELEASE);
+        if (!Settings.isDebugMode) LogMng.setMode(LogMng.MODE_RELEASE);
         LogMng.system('log mode: ' + LogMng.getMode());
 
         // Config setups
-        Config.assetsPath = this._initParams.assetsPath;
-        Config.domCanvasParent = this._initParams.domCanvasParent;
+        Settings.assetsPath = this._initParams.assetsPath;
 
         // GET Params
         this.readGETParams();
@@ -57,13 +56,13 @@ export class GameStarter {
                 switch (i) {
 
                     case 0: // aa
-                        Config.AA_TYPE = Number(val);
-                        LogMng.debug('Config.AA_TYPE = ' + Config.AA_TYPE);
+                        Settings.AA_TYPE = Number(val);
+                        LogMng.debug('Config.AA_TYPE = ' + Settings.AA_TYPE);
                         break;
                     
                     case 1: // test
-                        Config.TEST_MODE = Number(val) == 1;
-                        LogMng.debug('Config.TEST_MODE = ' + Config.TEST_MODE);
+                        Settings.TEST_MODE = Number(val) == 1;
+                        LogMng.debug('Config.TEST_MODE = ' + Settings.TEST_MODE);
                         break;
                     
                 }
@@ -73,7 +72,7 @@ export class GameStarter {
     }
 
     private startPreloader() {
-        this._preloader = new Preloader();
+        this._preloader = new GameLoader();
 
         let extOnLoadProgress: Function; 
         if (typeof this._initParams.onLoadProgress === 'function') {
@@ -81,7 +80,7 @@ export class GameStarter {
         }
 
         this._preloader.onLoadProgressSignal.add((aProgressPercent: number) => {
-            LogMng.debug(`loading: ${aProgressPercent}`);
+            LogMng.debug(`loading: ${aProgressPercent}%`);
             if (extOnLoadProgress) extOnLoadProgress(aProgressPercent);
         }, this);
 
@@ -96,7 +95,7 @@ export class GameStarter {
     }
 
     private onLoadingComplete() {
-        new GameEngine();
+        new GameRender(this._initParams.domCanvasParent);
     }
 
 }

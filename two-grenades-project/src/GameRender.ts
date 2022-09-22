@@ -5,12 +5,12 @@ import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
 import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass";
 import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader";
 import * as datGui from "dat.gui";
-import { Config } from "./data/Config";
 import { FrontEvents } from "./events/FrontEvents";
 import { InputMng } from "./input/InputMng";
 import { DeviceInfo } from "./utils/DeviceInfo";
 import { WorldScene } from "./scenes/GameScene";
-import { Params } from "./data/Params";
+import { Settings } from "./data/Settings";
+import { LogMng } from "./utils/LogMng";
 
 type Passes = {
     composer: EffectComposer;
@@ -19,7 +19,7 @@ type Passes = {
     smaaPass?: SMAAPass;
 };
 
-export class GameEngine {
+export class GameRender {
 
     private renderer: THREE.WebGLRenderer;
     private scene: THREE.Scene;
@@ -30,37 +30,37 @@ export class GameEngine {
     private renderPixelRatio = 1;
     private worldScene: WorldScene;
 
-    constructor() {
+    constructor(aDomCanvasParent: HTMLElement) {
 
-        this.setDebug();
-        this.setRenderer();
-        this.setScene();
-        this.setPasses();
-        this.setInput();
-        this.setGame();
-        this.setDebugGui();
-        this.setStats();
-        
-        FrontEvents.onWindowResizeSignal.add(this.onWindowResize, this);
-        
+        this.initDebug();
+        this.initRenderer(aDomCanvasParent);
+        this.initScene();
+        this.initPasses();
+        this.initInput(aDomCanvasParent);
+        this.initGameScene();
+        this.initStats();
+        this.initEvents();
+
         this.clock = new THREE.Clock();
-
         this.animate();
 
     }
 
-    private setDebug() {
-        if (Config.isDebugMode) {
-            Params.datGui = new datGui.GUI();
+    private initDebug() {
+        Settings.datGui = new datGui.GUI();
+
+        if (Settings.isDebugMode) {
+            // any debug gui fields
+
         }
     }
 
-    private setRenderer() {
-        let domContainer = Config.domCanvasParent;
+    private initRenderer(aDomCanvasParent: HTMLElement) {
+        let domContainer = aDomCanvasParent;
         let w = domContainer.clientWidth;
         let h = domContainer.clientHeight;
 
-        const clearColor = new THREE.Color(Config.BG_COLOR);
+        const clearColor = new THREE.Color(Settings.BG_COLOR);
 
         this.renderer = new THREE.WebGLRenderer({
             antialias: false
@@ -79,9 +79,9 @@ export class GameEngine {
         domContainer.appendChild(this.renderer.domElement);
     }
 
-    private setScene() {
-        const w = Config.domCanvasParent.clientWidth;
-        const h = Config.domCanvasParent.clientHeight;
+    private initScene() {
+        const w = innerWidth;
+        const h = innerHeight;
 
         this.scene = new THREE.Scene();
 
@@ -91,9 +91,9 @@ export class GameEngine {
         this.scene.add(this.camera);
     }
 
-    private setPasses() {
-        const w = Config.domCanvasParent.clientWidth;
-        const h = Config.domCanvasParent.clientHeight;
+    private initPasses() {
+        const w = innerWidth;
+        const h = innerHeight;
 
         this.passes = {
             composer: new EffectComposer(this.renderer),
@@ -102,8 +102,9 @@ export class GameEngine {
 
         this.passes.composer.setPixelRatio(1);
 
+        // anti-aliasing pass
         let aaPass: ShaderPass | SMAAPass;
-        switch (Config.AA_TYPE) {
+        switch (Settings.AA_TYPE) {
             case 1:
                 // FXAA
                 aaPass = this.passes.fxaaPass = new ShaderPass(FXAAShader);
@@ -117,6 +118,7 @@ export class GameEngine {
                 break;
 
             default:
+                LogMng.warn(`GameEngine -> Unknown anti-aliasing type: ${Settings.AA_TYPE}`);
                 break;
         }
 
@@ -124,57 +126,45 @@ export class GameEngine {
         if (aaPass) this.passes.composer.addPass(aaPass);
     }
 
-    private setInput() {
+    private initInput(aDomCanvasParent: HTMLElement) {
         InputMng.getInstance({
-            inputDomElement: Config.domCanvasParent,
+            inputDomElement: aDomCanvasParent,
             desktop: DeviceInfo.getInstance().desktop,
             isRightClickProcessing: false
         });
     }
 
-    private setGame() {
+    private initGameScene() {
         this.worldScene = new WorldScene({
             renderer: this.renderer,
             scene: this.scene,
             camera: this.camera
         });
-        this.worldScene.init();
-        this.worldScene.showScene();
         this.scene.add(this.worldScene);
     }
-
-    private setDebugGui() {
-        const gui = Params.datGui;
-        if (Config.isDebugMode) {
-            const LOCAL_PARAMS = {
-                axiesHelper: false
-            };
-            let testFolder = gui.addFolder('Test');
-            testFolder.add(LOCAL_PARAMS, 'axiesHelper').onChange((value) => {
-                // GameEvents.onDebugAxeHelperVisibleChange.dispatch(value);
-            });
-            testFolder.open();
-        }
-    }
-
-    private setStats() {
-        if (Config.isDebugMode) {
+    
+    private initStats() {
+        if (Settings.isDebugMode) {
             this.stats = new Stats();
             this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
             document.body.appendChild(this.stats.dom);
         }
     }
 
+    private initEvents() {
+        FrontEvents.onWindowResizeSignal.add(this.onWindowResize, this);
+    }
+
     private onWindowResize() {
         if (!this.renderer || !this.camera) return;
-        let w = Config.domCanvasParent.clientWidth;
-        let h = Config.domCanvasParent.clientHeight;
+        let w = innerWidth;
+        let h = innerHeight;
         this.renderer.setSize(w, h);
         this.passes.composer.setSize(w, h);
         this.camera.aspect = w / h;
         this.camera.updateProjectionMatrix();
         
-        switch (Config.AA_TYPE) {
+        switch (Settings.AA_TYPE) {
             case 1:
                 this.passes.fxaaPass.material.uniforms['resolution'].value.x = 1 / (w * this.renderPixelRatio);
                 this.passes.fxaaPass.material.uniforms['resolution'].value.y = 1 / (h * this.renderPixelRatio);
@@ -194,9 +184,9 @@ export class GameEngine {
     private animate() {
         let dt = this.clock.getDelta();
         
-        if (Config.isDebugMode) this.stats.begin();
+        if (Settings.isDebugMode) this.stats.begin();
         this.update(dt);
-        if (Config.isDebugMode) this.stats.end();
+        if (Settings.isDebugMode) this.stats.end();
 
         requestAnimationFrame(() => this.animate());
     }

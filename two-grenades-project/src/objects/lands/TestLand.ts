@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Config } from "../../data/Config";
+import { Settings } from "../../data/Settings";
 import { TextureAlias } from "../../data/TextureData";
 import { ThreeLoader } from "../../loaders/ThreeLoader";
 import { Wall } from "../Wall";
@@ -18,7 +18,7 @@ export class TestLand extends THREE.Group {
         const h = 2;
         let floorGeom = new THREE.BoxGeometry(size, h, size);
 
-        let repeatValue = size / Config.METER_SIZE / 4;
+        let repeatValue = size / Settings.METER_SIZE / 4;
         let floorTexture = loader.getTexture(TextureAlias.grass).clone();
         floorTexture.repeat.set(repeatValue, repeatValue);
         floorTexture.wrapS = THREE.RepeatWrapping;
@@ -35,11 +35,11 @@ export class TestLand extends THREE.Group {
         this.add(floorMesh);
 
         let wall = new Wall();
-        wall.position.x = -Config.METER_SIZE * 4;
+        wall.position.x = -Settings.METER_SIZE * 4;
         this.add(wall);
 
         wall = new Wall();
-        wall.position.x = Config.METER_SIZE * 4;
+        wall.position.x = Settings.METER_SIZE * 4;
         this.add(wall);
 
     }

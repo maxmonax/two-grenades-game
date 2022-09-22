@@ -310,7 +310,7 @@ export class ThreeLoader {
 
     private onItemLoaded() {
         this.curr_item++;
-        this.onLoadUpdateSignal.dispatch(100 * this.curr_item / this.total_items);
+        this.onLoadUpdateSignal.dispatch(Math.trunc(100 * this.curr_item / this.total_items));
 
         if (this.curr_item >= this.total_items) {
             this.loadComplete();

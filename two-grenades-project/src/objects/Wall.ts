@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Config } from "../data/Config";
+import { Settings } from "../data/Settings";
 import { TextureAlias } from "../data/TextureData";
 import { ThreeLoader } from "../loaders/ThreeLoader";
 
@@ -11,13 +11,13 @@ export class Wall extends THREE.Group {
 
         let loader = ThreeLoader.getInstance();
 
-        const wallWidth = 1 * Config.METER_SIZE;
-        const wallHeight = 1.2 * Config.METER_SIZE;
+        const wallWidth = 1 * Settings.METER_SIZE;
+        const wallHeight = 1.2 * Settings.METER_SIZE;
         const wallLength = 4;
         let cubeGeom = new THREE.BoxGeometry(wallWidth, wallHeight, wallWidth);
 
         let cubeTexture = loader.getTexture(TextureAlias.bricks).clone();
-        let repeatValue = wallWidth / Config.METER_SIZE;
+        let repeatValue = wallWidth / Settings.METER_SIZE;
         cubeTexture.repeat.set(repeatValue, repeatValue);
         cubeTexture.wrapS = THREE.RepeatWrapping;
         cubeTexture.wrapT = THREE.RepeatWrapping;

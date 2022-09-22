@@ -1,8 +1,8 @@
 import { FrontEvents } from './events/FrontEvents';
-import { GameStarter } from './GameStarter';
+import { GameBoot } from './GameBoot';
 
 window.addEventListener('load', () => {
-    let gameStarter = new GameStarter();
+    let gameStarter = new GameBoot();
     let event = new CustomEvent('gameStarterCreated', {
         detail: {
             gameStarter: gameStarter
