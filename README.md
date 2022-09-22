@@ -1,4 +1,5 @@
 # Two Grenades Game
+This is a 3D browser game built on three.js engine.
 
 ## Recommended IDE
 * [VS Code](https://code.visualstudio.com)
@@ -17,6 +18,6 @@
    npm i
    ```
 4. Use NPM commands:
-* **start**: start dev server for 'build' dirrectory
-* **start:open**: start + open the page
-* **prod**: build with mode=production
+* **start** - start dev server for 'build' dirrectory
+* **start:open** - start dev server and open the page
+* **prod** - build with mode=production
