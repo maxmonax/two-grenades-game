@@ -21,10 +21,10 @@
     <script src="game.bundle.js"></script>
 
     <script>
-
-        window.addEventListener('gameStarterCreated', function (e) { // change here Event to CustomEvent
-            let gameStarter = e.detail.gameStarter;
-            gameStarter.init({
+        
+        window.addEventListener('gameBootCreated', (e) => {
+            let gameBoot = e.detail.gameBoot;
+            gameBoot.init({
                 domCanvasParent: document.getElementById('game'),
                 assetsPath: './assets/',
                 onLoadComplete: () => {
@@ -32,7 +32,7 @@
                     document.getElementById('loader').remove();
                 }
             });
-        }.bind(this));
+        });
 
     </script>
 

@@ -1,4 +1,5 @@
-import { Character } from "./Character";
+import { ModelAlias } from "../data/ModelData";
+import { Character, CharAnimation } from "./Character";
 
 export class CharacterFactory {
 
@@ -9,24 +10,24 @@ export class CharacterFactory {
         char = new Character();
 
         char.init({
-            modelAlias: 'charSwat',
+            modelAlias: ModelAlias.charSwat,
             scale: aScale
         });
 
         char.addAnimation({
-            animAlias: 'charSwatIdleAnim',
-            newKey: 'idle'
+            animAlias: ModelAlias.charSwatIdleAnim,
+            newKey: CharAnimation.idle
         });
         char.addAnimation({
-            animAlias: 'charSwatGrenadeAnim',
-            newKey: 'grenade'
+            animAlias: ModelAlias.charSwatGrenadeAnim,
+            newKey: CharAnimation.throw
         });
         char.addAnimation({
-            animAlias: 'charSwatDeathAnim',
-            newKey: 'death'
+            animAlias: ModelAlias.charSwatDeathAnim,
+            newKey: CharAnimation.death
         });
         
-        char.playAnimation('idle');
+        char.playAnimation(CharAnimation.idle);
         char.update(0.0);
 
         return char;
@@ -40,24 +41,24 @@ export class CharacterFactory {
         char = new Character();
 
         char.init({
-            modelAlias: 'charBot',
+            modelAlias: ModelAlias.charBot,
             scale: aScale
         });
 
         char.addAnimation({
-            animAlias: 'charBotIdleAnim',
-            newKey: 'idle'
+            animAlias: ModelAlias.charBotIdleAnim,
+            newKey: CharAnimation.idle
         });
         char.addAnimation({
-            animAlias: 'charBotGrenadeAnim',
-            newKey: 'grenade'
+            animAlias: ModelAlias.charBotGrenadeAnim,
+            newKey: CharAnimation.throw
         });
         char.addAnimation({
-            animAlias: 'charBotDeathAnim',
-            newKey: 'death'
+            animAlias: ModelAlias.charBotDeathAnim,
+            newKey: CharAnimation.death
         });
 
-        char.playAnimation('idle');
+        char.playAnimation(CharAnimation.idle);
         char.update(0.0);
 
         return char;

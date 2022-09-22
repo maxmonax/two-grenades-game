@@ -2,10 +2,10 @@ import { FrontEvents } from './events/FrontEvents';
 import { GameBoot } from './GameBoot';
 
 window.addEventListener('load', () => {
-    let gameStarter = new GameBoot();
-    let event = new CustomEvent('gameStarterCreated', {
+    let gameBoot = new GameBoot();
+    let event = new CustomEvent('gameBootCreated', {
         detail: {
-            gameStarter: gameStarter
+            gameBoot: gameBoot
         }
     });
     window.dispatchEvent(event);

@@ -1,4 +1,4 @@
-import { GameLoader } from './GameLoader';
+import { GamePreloader } from './GamePreloader';
 import { GameRender } from './GameRender';
 import { LogMng } from "./utils/LogMng";
 import * as MyUtils from './utils/MyUtils';
@@ -14,13 +14,13 @@ type InitParams = {
 export class GameBoot {
 
     private _initParams: InitParams;
-    private _preloader: GameLoader;
+    private _preloader: GamePreloader;
     private _inited = false;
 
     init(aParams: InitParams) {
 
         if (this._inited) {
-            LogMng.warn('GameStarter -> Game is already inited!');
+            LogMng.warn('GameBoot -> Game is already inited!');
             return;
         }
         this._inited = true;
@@ -72,7 +72,7 @@ export class GameBoot {
     }
 
     private startPreloader() {
-        this._preloader = new GameLoader();
+        this._preloader = new GamePreloader();
 
         let extOnLoadProgress: Function; 
         if (typeof this._initParams.onLoadProgress === 'function') {
@@ -91,7 +91,7 @@ export class GameBoot {
             }
         }, this);
 
-        this._preloader.loadInitPack();
+        this._preloader.start();
     }
 
     private onLoadingComplete() {

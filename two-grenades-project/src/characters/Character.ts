@@ -3,6 +3,12 @@ import { SkeletonUtils } from 'three/examples/jsm/utils/SkeletonUtils';
 import { ThreeLoader } from '../loaders/ThreeLoader';
 import { LogMng } from '../utils/LogMng';
 
+export enum CharAnimation {
+    idle = 'idle',
+    throw = 'throw',
+    death = 'death'
+};
+
 export type CharacterParams = {
     modelAlias: string,
     scale?: number;
@@ -19,11 +25,6 @@ export class Character extends THREE.Group {
     protected _animationStartTime: number;
     protected _action: THREE.AnimationAction;
 
-    protected _acceleration: THREE.Vector3;
-    protected _decceleration: THREE.Vector3;
-    protected _velocity: THREE.Vector3;
-
-
     constructor() {
         super();
         this._innerDummy = new THREE.Group();
@@ -32,11 +33,11 @@ export class Character extends THREE.Group {
     }
 
     protected logDebug(aMsg: string) {
-        LogMng.debug(`Personage(class): ${aMsg}`);
+        LogMng.debug(`Character => ${aMsg}`);
     }
 
     protected logWarn(aMsg: string) {
-        LogMng.warn(`Personage(class): ${aMsg}`);
+        LogMng.warn(`Character => ${aMsg}`);
     }
 
     protected getAnimationTime(): number {
@@ -49,18 +50,6 @@ export class Character extends THREE.Group {
 
     get animationName(): string {
         return this._currAnimName;
-    }
-
-    get acceleration(): THREE.Vector3 {
-        return this._acceleration;
-    }
-
-    get decceleration(): THREE.Vector3 {
-        return this._decceleration;
-    }
-
-    get velocity(): THREE.Vector3 {
-        return this._velocity;
     }
 
     init(aParams: CharacterParams) {
@@ -86,11 +75,6 @@ export class Character extends THREE.Group {
         this._pers.scale.set(scale, scale, scale);
         this._innerDummy.add(this._pers);
         this._mixer = new THREE.AnimationMixer(this._pers);
-
-        let factor = 100;
-        this._acceleration = new THREE.Vector3(1 * scale, 0.0025, 50 * scale).multiplyScalar(factor);
-        this._decceleration = new THREE.Vector3(-0.0005 * scale, -0.0001, -50.0 * scale).multiplyScalar(factor);
-        this._velocity = new THREE.Vector3();
 
     }
 
@@ -146,13 +130,6 @@ export class Character extends THREE.Group {
     } = {}) {
 
         if (this._currAnimName == aName) return;
-        // if (this._nextAnimName == aName) return;
-
-        // this.logDebug(`playAnimation() -> animName = ${aName}`);
-        
-        // if (this._currAnimName == 'falling' && this._nextAnimName == 'idle') {
-        //     debugger;
-        // }
 
         if (!this._animations[aName]) {
             this.logWarn(`playAnimation() -> no animation named ${aName}`);
@@ -181,32 +158,12 @@ export class Character extends THREE.Group {
         }
 
         this._animationStartTime = Date.now();
-        // this._nextAnimName = aName;
         this._currAnimName = aName;
         this._action = newAction;
     }
 
     update(dt: number) {
         if (this._mixer) this._mixer.update(dt);
-
-        // turn update
-        let turnSpd = 1;
-        switch (this._currAnimName) {
-            
-            case 'idle':
-                turnSpd = 10;
-                break;
-            
-            case 'walk':
-                break;
-            
-            case 'run':
-                break;
-        
-            default:
-                break;
-        }
-
     }
 
 }
