@@ -60,11 +60,6 @@ export class GameBoot {
                         LogMng.debug('Config.AA_TYPE = ' + Settings.AA_TYPE);
                         break;
                     
-                    case 1: // test
-                        Settings.TEST_MODE = Number(val) == 1;
-                        LogMng.debug('Config.TEST_MODE = ' + Settings.TEST_MODE);
-                        break;
-                    
                 }
             }
         }

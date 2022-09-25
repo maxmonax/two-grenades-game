@@ -1,13 +1,11 @@
-import { ModelAlias } from "../data/ModelData";
+import { ModelAlias } from "../../data/ModelData";
 import { Character, CharAnimation } from "./Character";
 
 export class CharacterFactory {
 
     static getPlayerCharacter(aScale: number): Character {
 
-        let char: Character;
-        
-        char = new Character();
+        let char = new Character();
 
         char.init({
             modelAlias: ModelAlias.charSwat,

@@ -1,4 +1,4 @@
-import { LogMng } from "../utils/LogMng";
+import { LogMng } from "../LogMng";
 
 interface IState {
     name: string;

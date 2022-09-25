@@ -1,40 +1,41 @@
 import * as THREE from "three";
-import { FrontEvents } from "../events/FrontEvents";
-import { ThreeLoader } from "../loaders/ThreeLoader";
+import { Signal } from "../events/Signal";
 import { LinearSpline, MyMath } from "../utils/MyMath";
 
 const _VS = `
-uniform float pointMultiplier;
+    uniform float pointMultiplier;
 
-attribute float size;
-attribute vec4 clr;
+    attribute float size;
+    attribute vec4 clr;
 
-varying vec4 vColor;
+    varying vec4 vColor;
 
-void main() {
-    vColor = clr;
+    void main() {
+        vColor = clr;
 
-    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
 
-    gl_Position = projectionMatrix * mvPosition;
-    //gl_PointSize = pointMultiplier / gl_Position.w;
-    gl_PointSize = size * pointMultiplier / gl_Position.w;
-}
+        gl_Position = projectionMatrix * mvPosition;
+        //gl_PointSize = pointMultiplier / gl_Position.w;
+        gl_PointSize = size * pointMultiplier / gl_Position.w;
+    }
 `;
 
 const _FS = `
-uniform sampler2D diffuseTexture;
+    uniform sampler2D diffuseTexture;
 
-varying vec4 vColor;
+    varying vec4 vColor;
 
-void main() {
-    gl_FragColor = texture2D(diffuseTexture, gl_PointCoord) * vColor;
-}
+    void main() {
+        gl_FragColor = texture2D(diffuseTexture, gl_PointCoord) * vColor;
+    }
 `;
 
 type ParticleSystemParams = {
     parent: THREE.Object3D;
     camera: THREE.Camera;
+    texture: THREE.Texture;
+    onWindowResizeSignal: Signal;
     frequency?: number; // how many particles in second
     lifeTime?: number;
     gravity?: THREE.Vector3;
@@ -72,20 +73,19 @@ type ParticleData = {
 
 export class ParticleSystem {
     private _params: ParticleSystemParams;
-    private uniforms: any;
-    private material: THREE.ShaderMaterial;
-    private geometry: THREE.BufferGeometry;
-    private points: THREE.Points;
-    private particles: ParticleData[];
-
-    private alphaSpline: LinearSpline;
-    private scaleFactorSpline: LinearSpline;
-
+    private _uniforms: any;
+    private _material: THREE.ShaderMaterial;
+    private _geometry: THREE.BufferGeometry;
+    private _points: THREE.Points;
+    private _particles: ParticleData[];
+    // spline math
+    private _alphaSpline: LinearSpline;
+    private _scaleFactorSpline: LinearSpline;
     // inner params
-    private addParticleTime = 0;
-    private startAlpha = 1;
-    private startScale = 1;
-    private prevPosition: THREE.Vector3;
+    private _addParticleTime = 0;
+    private _startAlpha = 1;
+    private _startScale = 1;
+    private _prevPosition: THREE.Vector3;
 
     constructor(aParams: ParticleSystemParams) {
         this._params = aParams;
@@ -101,19 +101,19 @@ export class ParticleSystem {
         if (!this._params.deltaPosition) this._params.deltaPosition = {};
         if (!this._params.deltaVelocity) this._params.deltaVelocity = {};
 
-        this.prevPosition = this._params.position.clone();
+        this._prevPosition = this._params.position.clone();
 
-        this.uniforms = {
+        this._uniforms = {
             diffuseTexture: {
-                value: ThreeLoader.getInstance().getTexture('particleCircle')
+                value: this._params.texture
             },
             pointMultiplier: {
                 value: window.innerHeight / (2.0 * Math.tan(.02 * 60.0 * Math.PI / 180))
             }
         };
 
-        this.material = new THREE.ShaderMaterial({
-            uniforms: this.uniforms,
+        this._material = new THREE.ShaderMaterial({
+            uniforms: this._uniforms,
             vertexShader: _VS,
             fragmentShader: _FS,
             blending: THREE.AdditiveBlending,
@@ -123,43 +123,36 @@ export class ParticleSystem {
             vertexColors: true
         });
 
-        this.particles = [];
+        this._particles = [];
 
-        this.geometry = new THREE.BufferGeometry();
-        this.geometry.setAttribute('position', new THREE.Float32BufferAttribute([], 3));
-        this.geometry.setAttribute('size', new THREE.Float32BufferAttribute([], 1));
-        this.geometry.setAttribute('clr', new THREE.Float32BufferAttribute([], 4));
+        this._geometry = new THREE.BufferGeometry();
+        this._geometry.setAttribute('position', new THREE.Float32BufferAttribute([], 3));
+        this._geometry.setAttribute('size', new THREE.Float32BufferAttribute([], 1));
+        this._geometry.setAttribute('clr', new THREE.Float32BufferAttribute([], 4));
 
-        this.points = new THREE.Points(this.geometry, this.material);
+        this._points = new THREE.Points(this._geometry, this._material);
 
-        this._params.parent.add(this.points);
+        this._params.parent.add(this._points);
 
         if (this._params.alphaChange) {
-            this.alphaSpline = new LinearSpline(this.simpleLinerSpline);
+            this._alphaSpline = new LinearSpline(this.simpleLinerSpline);
             for (let i = 0; i < this._params.alphaChange.length; i++) {
                 const a = this._params.alphaChange[i];
-                this.alphaSpline.addPoint(a.val, a.t);
+                this._alphaSpline.addPoint(a.val, a.t);
             }
-            this.startAlpha = this._params.alphaChange[0].val;
+            this._startAlpha = this._params.alphaChange[0].val;
         }
 
         if (this._params.scaleFactorChange) {
-            this.scaleFactorSpline = new LinearSpline(this.simpleLinerSpline);
+            this._scaleFactorSpline = new LinearSpline(this.simpleLinerSpline);
             for (let i = 0; i < this._params.scaleFactorChange.length; i++) {
                 const sf = this._params.scaleFactorChange[i];
-                this.scaleFactorSpline.addPoint(sf.val, sf.t);
+                this._scaleFactorSpline.addPoint(sf.val, sf.t);
             }
-            this.startScale = this._params.scaleFactorChange[0].val;
+            this._startScale = this._params.scaleFactorChange[0].val;
         }
 
-        //this.addParticles();
-        //this.updateGeometry();
-
-        FrontEvents.onWindowResizeSignal.add(this.onWindowResize, this);
-    }
-
-    private simpleLinerSpline(t, a, b) {
-        return a + t * (b - a);
+        this._params.onWindowResizeSignal.add(this.onWindowResize, this);
     }
 
     public get params(): ParticleSystemParams {
@@ -169,16 +162,19 @@ export class ParticleSystem {
     public get position(): THREE.Vector3 {
         return this._params.position;
     }
-    
 
     private onWindowResize() {
-        this.uniforms.pointMultiplier.value = window.innerHeight / (2.0 * Math.tan(.02 * 60.0 * Math.PI / 180));
+        this._uniforms.pointMultiplier.value = window.innerHeight / (2.0 * Math.tan(.02 * 60.0 * Math.PI / 180));
+    }
+
+    private simpleLinerSpline(t, a, b) {
+        return a + t * (b - a);
     }
 
     private addParticles(count: number, dt: number) {
-        let dtPosition = this._params.position.clone().sub(this.prevPosition).negate();
+        let dtPosition = this._params.position.clone().sub(this._prevPosition).negate();
         //  console.log('dtPosition: ', dtPosition);
-        this.prevPosition.copy(this._params.position);
+        this._prevPosition.copy(this._params.position);
 
         for (let i = 0; i < count; i++) {
             let velocity = this._params.velocity.clone();
@@ -210,15 +206,15 @@ export class ParticleSystem {
             let pData: ParticleData = {
                 position: pos,
                 startSize: size,
-                size: size * this.startScale,
+                size: size * this._startScale,
                 color: clr,
-                alpha: this.startAlpha,
+                alpha: this._startAlpha,
                 lifeTime: this._params.lifeTime,
                 lifeProgress: 0,
                 rotation: 0,
                 velocity: velocity
             };
-            this.particles.push(pData);
+            this._particles.push(pData);
         }
     }
 
@@ -227,37 +223,37 @@ export class ParticleSystem {
         const sizes = [];
         const colors = [];
 
-        for (let p of this.particles) {
+        for (let p of this._particles) {
             positions.push(p.position.x, p.position.y, p.position.z);
             sizes.push(p.size);
             colors.push(p.color.r, p.color.g, p.color.b, p.alpha);
         }
 
-        this.geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-        this.geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
-        this.geometry.setAttribute('clr', new THREE.Float32BufferAttribute(colors, 4));
+        this._geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        this._geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+        this._geometry.setAttribute('clr', new THREE.Float32BufferAttribute(colors, 4));
 
-        this.geometry.attributes.position.needsUpdate = true;
-        this.geometry.attributes.size.needsUpdate = true;
-        this.geometry.attributes.clr.needsUpdate = true;
+        this._geometry.attributes.position.needsUpdate = true;
+        this._geometry.attributes.size.needsUpdate = true;
+        this._geometry.attributes.clr.needsUpdate = true;
 
     }
 
     private updateParticles(dt: number) {
 
-        for (const p of this.particles) {
+        for (const p of this._particles) {
             p.lifeProgress += dt;
             if (p.lifeProgress >= p.lifeTime) continue;
             let lifeProgress = p.lifeProgress / p.lifeTime;
 
             // alpha
-            if (this.alphaSpline) {
-                p.alpha = this.alphaSpline.get(lifeProgress);
+            if (this._alphaSpline) {
+                p.alpha = this._alphaSpline.get(lifeProgress);
             }
 
             // size
-            if (this.scaleFactorSpline) {
-                p.size = p.startSize * this.scaleFactorSpline.get(lifeProgress) * this.params.sizeFactor;
+            if (this._scaleFactorSpline) {
+                p.size = p.startSize * this._scaleFactorSpline.get(lifeProgress) * this.params.sizeFactor;
             }
 
             // pos
@@ -266,13 +262,13 @@ export class ParticleSystem {
             p.velocity.add(this._params.gravity.clone().multiplyScalar(dt));
         }
 
-        this.particles = this.particles.filter(p => {
+        this._particles = this._particles.filter(p => {
             return p.lifeProgress < p.lifeTime;
         });
     
         // sort
         if (this._params.sorting == true) {
-            this.particles.sort((a, b) => {
+            this._particles.sort((a, b) => {
                 const d1 = this._params.camera.position.distanceTo(a.position);
                 const d2 = this._params.camera.position.distanceTo(b.position);
                 if (d1 > d2) return -1;
@@ -281,28 +277,28 @@ export class ParticleSystem {
             });
         }
     }
-
+    
     free() {
-        FrontEvents.onWindowResizeSignal.remove(this.onWindowResize, this);
-        this.particles = [];
+        this._params.onWindowResizeSignal.remove(this.onWindowResize, this);
+        this._particles = [];
         this.updateGeometry();
         this._params = null;
-        this.uniforms = null;
-        this.material = null;
-        this.geometry = null;
-        this.points = null;
-        this.alphaSpline = null;
-        this.scaleFactorSpline = null;
-        this.particles = null;
+        this._uniforms = null;
+        this._material = null;
+        this._geometry = null;
+        this._points = null;
+        this._alphaSpline = null;
+        this._scaleFactorSpline = null;
+        this._particles = null;
     }
 
     update(dt: number) {
         let tr = 1 / this._params.frequency;
-        this.addParticleTime += dt;
-        if (this.addParticleTime >= tr) {
-            let cnt = Math.floor(this.addParticleTime / tr);
-            this.addParticles(cnt, this.addParticleTime);
-            this.addParticleTime %= tr;
+        this._addParticleTime += dt;
+        if (this._addParticleTime >= tr) {
+            let cnt = Math.floor(this._addParticleTime / tr);
+            this.addParticles(cnt, this._addParticleTime);
+            this._addParticleTime %= tr;
         }
         this.updateParticles(dt);
         this.updateGeometry();

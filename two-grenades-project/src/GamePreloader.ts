@@ -1,4 +1,4 @@
-import { ThreeLoader } from './loaders/ThreeLoader';
+import { ThreeLoader } from './utils/loaders/ThreeLoader';
 import { Signal } from './events/Signal';
 import { TEXTURE_LOAD_LIST } from './data/TextureData';
 import { Settings } from './data/Settings';

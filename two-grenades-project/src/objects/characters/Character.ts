@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three/examples/jsm/utils/SkeletonUtils';
-import { ThreeLoader } from '../loaders/ThreeLoader';
-import { LogMng } from '../utils/LogMng';
+import { ThreeLoader } from '../../utils/loaders/ThreeLoader';
+import { LogMng } from '../../utils/LogMng';
 
 export enum CharAnimation {
     idle = 'idle',

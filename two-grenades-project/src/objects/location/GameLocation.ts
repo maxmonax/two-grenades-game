@@ -1,10 +1,10 @@
 import * as THREE from "three";
 import { Settings } from "../../data/Settings";
 import { TextureAlias } from "../../data/TextureData";
-import { ThreeLoader } from "../../loaders/ThreeLoader";
+import { ThreeLoader } from "../../utils/loaders/ThreeLoader";
 import { Wall } from "../Wall";
 
-export class TestLand extends THREE.Group {
+export class GameLocation extends THREE.Group {
 
     constructor(aParams: {
         floorSize: number,

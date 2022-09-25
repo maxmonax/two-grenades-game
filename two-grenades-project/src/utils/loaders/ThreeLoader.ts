@@ -2,8 +2,8 @@ import * as THREE from "three";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 import { GLTFLoader, GLTF } from "three/examples/jsm/loaders/GLTFLoader";
-import { Signal } from "../events/Signal";
-import { LogMng } from "../utils/LogMng";
+import { Signal } from "../../events/Signal";
+import { LogMng } from "../LogMng";
 
 const TYPE_ATLAS_JSON = 'atlasJSONArray';
 const TYPE_TEXTURE = 'image';

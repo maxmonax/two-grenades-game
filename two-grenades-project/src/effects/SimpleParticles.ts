@@ -1,10 +1,11 @@
 import * as THREE from "three";
-import { ThreeLoader } from "../loaders/ThreeLoader";
+import { Signal } from "../events/Signal";
 import { LinearSpline, MyMath } from "../utils/MyMath";
-
 
 type SimpleParticlesParams = {
     parent: THREE.Object3D;
+    texture: THREE.Texture;
+    onWindowResizeSignal: Signal;
     radius?: number;
     segmentsW?: number;
     segmentsH?: number;
@@ -45,17 +46,10 @@ type ParticleData = {
 
 export class SimpleParticles {
     private _params: SimpleParticlesParams;
-    // private material: THREE.MeshBasicMaterial;
-    private texture: THREE.Texture;
-    // private material: THREE.SpriteMaterial;
-    // private geometry: THREE.SphereGeometry;
-    // private geometry: THREE.;
-    // private points: THREE.Points;
     private particles: THREE.Sprite[];
-
+    // splines
     private alphaSpline: LinearSpline;
     private scaleFactorSpline: LinearSpline;
-
     // inner params
     private addParticleTime = 0;
     private startAlpha = 1;
@@ -81,28 +75,6 @@ export class SimpleParticles {
 
         this.prevPosition = this._params.position.clone();
 
-        // this.material = new THREE.MeshBasicMaterial({
-        //     color: this._params.color,
-        //     // blending: THREE.AdditiveBlending,
-        //     depthTest: true,
-        //     depthWrite: false,
-        //     transparent: true,
-        //     // vertexColors: true
-        // });
-        this.texture = ThreeLoader.getInstance().getTexture('particleCircle');
-        // this.material = new THREE.SpriteMaterial({
-        //     map: t,
-        //     color: 0xFFFFFF,
-        //     blending: THREE.AdditiveBlending,
-        //     transparent: true,
-        //     alphaTest: 0.01,
-        //     // opacity: 0.9,
-        //     opacity: 0.5,
-        //     depthTest: true,
-        //     depthWrite: false,
-        // });
-        // t.needsUpdate = true;
-
         this.particles = [];
 
         if (this._params.alphaChange) {
@@ -123,10 +95,6 @@ export class SimpleParticles {
             this.startScale = this._params.scaleFactorChange[0].val;
         }
 
-        //this.addParticles();
-        //this.updateGeometry();
-
-        // GlobalEvents.onWindowResizeSignal.add(this.onWindowResize, this);
     }
 
     private simpleLinerSpline(t, a, b) {
@@ -145,16 +113,9 @@ export class SimpleParticles {
     public set velocity(v: THREE.Vector3) {
         this._params.velocity = v;
     }
-    
-    
-
-    // private onWindowResize() {
-    //     this.uniforms.pointMultiplier.value = window.innerHeight / (2.0 * Math.tan(.02 * 60.0 * Math.PI / 180));
-    // }
 
     private addParticles(count: number, dt: number) {
         let dtPosition = this._params.position.clone().sub(this.prevPosition).negate();
-        //  console.log('dtPosition: ', dtPosition);
         this.prevPosition.copy(this._params.position);
 
         for (let i = 0; i < count; i++) {
@@ -195,10 +156,9 @@ export class SimpleParticles {
                 rotation: 0,
                 velocity: velocity
             };
-            // this.particles.push(pData);
 
             let mat = new THREE.SpriteMaterial({
-                map: this.texture,
+                map: this._params.texture,
                 color: clr,
                 blending: THREE.AdditiveBlending,
                 transparent: true,
@@ -208,7 +168,8 @@ export class SimpleParticles {
                 depthTest: true,
                 depthWrite: false,
             });
-            this.texture.needsUpdate = true;
+            this._params.texture.needsUpdate = true;
+            
             let sprite = new THREE.Sprite(mat);
             sprite.position.copy(pos);
             sprite.scale.set(size, size, size);
@@ -218,27 +179,6 @@ export class SimpleParticles {
             this.particles.push(sprite);
         }
     }
-
-    // private updateGeometry() {
-    //     const positions = [];
-    //     const sizes = [];
-    //     const colors = [];
-
-    //     for (let p of this.particles) {
-    //         positions.push(p.position.x, p.position.y, p.position.z);
-    //         sizes.push(p.size);
-    //         colors.push(p.color.r, p.color.g, p.color.b, p.alpha);
-    //     }
-
-    //     this.geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    //     this.geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
-    //     this.geometry.setAttribute('clr', new THREE.Float32BufferAttribute(colors, 4));
-
-    //     this.geometry.attributes.position.needsUpdate = true;
-    //     this.geometry.attributes.size.needsUpdate = true;
-    //     this.geometry.attributes.clr.needsUpdate = true;
-
-    // }
 
     private updateParticles(dt: number) {
 
@@ -274,28 +214,11 @@ export class SimpleParticles {
             p.velocity.add(this._params.gravity.clone().multiplyScalar(dt));
         }
 
-        // this.particles = this.particles.filter(p => {
-        //     return p.lifeProgress < p.lifeTime;
-        // });
-    
-        // sort
-        // if (this._params.sorting == true) {
-        //     this.particles.sort((a, b) => {
-        //         const d1 = this._params.camera.position.distanceTo(a.position);
-        //         const d2 = this._params.camera.position.distanceTo(b.position);
-        //         if (d1 > d2) return -1;
-        //         if (d1 < d2) return 1;
-        //         return 0;
-        //     });
-        // }
     }
 
     free() {
         this.particles = [];
         this._params = null;
-        // this.material = null;
-        // this.geometry = null;
-        // this.points = null;
         this.alphaSpline = null;
         this.scaleFactorSpline = null;
         this.particles = null;
@@ -311,6 +234,5 @@ export class SimpleParticles {
         }
         this.updateParticles(dt);
     }
-
 
 }

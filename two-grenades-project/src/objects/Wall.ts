@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Settings } from "../data/Settings";
 import { TextureAlias } from "../data/TextureData";
-import { ThreeLoader } from "../loaders/ThreeLoader";
+import { ThreeLoader } from "../utils/loaders/ThreeLoader";
 
 export class Wall extends THREE.Group {
 

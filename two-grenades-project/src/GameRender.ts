@@ -21,14 +21,14 @@ type Passes = {
 
 export class GameRender {
 
-    private renderer: THREE.WebGLRenderer;
-    private scene: THREE.Scene;
-    private camera: THREE.PerspectiveCamera;
-    private passes: Passes;
-    private stats: Stats;
-    private clock: THREE.Clock;
-    private renderPixelRatio = 1;
-    private worldScene: WorldScene;
+    private _renderer: THREE.WebGLRenderer;
+    private _scene: THREE.Scene;
+    private _camera: THREE.PerspectiveCamera;
+    private _passes: Passes;
+    private _stats: Stats;
+    private _clock: THREE.Clock;
+    private _renderPixelRatio = 1;
+    private _worldScene: WorldScene;
 
     constructor(aDomCanvasParent: HTMLElement) {
 
@@ -41,7 +41,7 @@ export class GameRender {
         this.initStats();
         this.initEvents();
 
-        this.clock = new THREE.Clock();
+        this._clock = new THREE.Clock();
         this.animate();
 
     }
@@ -62,59 +62,59 @@ export class GameRender {
 
         const clearColor = new THREE.Color(Settings.BG_COLOR);
 
-        this.renderer = new THREE.WebGLRenderer({
+        this._renderer = new THREE.WebGLRenderer({
             antialias: false
         });
-        this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
-        this.renderer.setSize(w, h);
-        this.renderer.setClearColor(clearColor);
-        this.renderPixelRatio = this.renderer.getPixelRatio();
-        this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
+        this._renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
+        this._renderer.setSize(w, h);
+        this._renderer.setClearColor(clearColor);
+        this._renderPixelRatio = this._renderer.getPixelRatio();
+        this._renderer.shadowMap.enabled = true;
+        this._renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
 
-        this.renderer.outputEncoding = THREE.sRGBEncoding;
-        this.renderer.toneMapping = THREE.LinearToneMapping;
-        this.renderer.toneMappingExposure = 0.8;
+        this._renderer.outputEncoding = THREE.sRGBEncoding;
+        this._renderer.toneMapping = THREE.LinearToneMapping;
+        this._renderer.toneMappingExposure = 0.8;
 
-        domContainer.appendChild(this.renderer.domElement);
+        domContainer.appendChild(this._renderer.domElement);
     }
 
     private initScene() {
         const w = innerWidth;
         const h = innerHeight;
 
-        this.scene = new THREE.Scene();
+        this._scene = new THREE.Scene();
 
-        this.camera = new THREE.PerspectiveCamera(45, w / h, 1, 1000);
-        this.camera.position.set(10, 0, 10);
-        this.camera.lookAt(new THREE.Vector3(0, 0, 0));
-        this.scene.add(this.camera);
+        this._camera = new THREE.PerspectiveCamera(45, w / h, 1, 1000);
+        this._camera.position.set(10, 0, 10);
+        this._camera.lookAt(new THREE.Vector3(0, 0, 0));
+        this._scene.add(this._camera);
     }
 
     private initPasses() {
         const w = innerWidth;
         const h = innerHeight;
 
-        this.passes = {
-            composer: new EffectComposer(this.renderer),
-            renderPass: new RenderPass(this.scene, this.camera)
+        this._passes = {
+            composer: new EffectComposer(this._renderer),
+            renderPass: new RenderPass(this._scene, this._camera)
         };
 
-        this.passes.composer.setPixelRatio(1);
+        this._passes.composer.setPixelRatio(1);
 
         // anti-aliasing pass
         let aaPass: ShaderPass | SMAAPass;
         switch (Settings.AA_TYPE) {
             case 1:
                 // FXAA
-                aaPass = this.passes.fxaaPass = new ShaderPass(FXAAShader);
-                this.passes.fxaaPass.material.uniforms['resolution'].value.x = 1 / (w * this.renderPixelRatio);
-                this.passes.fxaaPass.material.uniforms['resolution'].value.y = 1 / (h * this.renderPixelRatio);
+                aaPass = this._passes.fxaaPass = new ShaderPass(FXAAShader);
+                this._passes.fxaaPass.material.uniforms['resolution'].value.x = 1 / (w * this._renderPixelRatio);
+                this._passes.fxaaPass.material.uniforms['resolution'].value.y = 1 / (h * this._renderPixelRatio);
                 break;
 
             case 2:
                 // SMAA
-                aaPass = this.passes.smaaPass = new SMAAPass(w, h);
+                aaPass = this._passes.smaaPass = new SMAAPass(w, h);
                 break;
 
             default:
@@ -122,8 +122,8 @@ export class GameRender {
                 break;
         }
 
-        this.passes.composer.addPass(this.passes.renderPass);
-        if (aaPass) this.passes.composer.addPass(aaPass);
+        this._passes.composer.addPass(this._passes.renderPass);
+        if (aaPass) this._passes.composer.addPass(aaPass);
     }
 
     private initInput(aDomCanvasParent: HTMLElement) {
@@ -135,19 +135,19 @@ export class GameRender {
     }
 
     private initGameScene() {
-        this.worldScene = new WorldScene({
-            renderer: this.renderer,
-            scene: this.scene,
-            camera: this.camera
+        this._worldScene = new WorldScene({
+            renderer: this._renderer,
+            scene: this._scene,
+            camera: this._camera
         });
-        this.scene.add(this.worldScene);
+        this._scene.add(this._worldScene);
     }
     
     private initStats() {
         if (Settings.isDebugMode) {
-            this.stats = new Stats();
-            this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
-            document.body.appendChild(this.stats.dom);
+            this._stats = new Stats();
+            this._stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+            document.body.appendChild(this._stats.dom);
         }
     }
 
@@ -156,37 +156,37 @@ export class GameRender {
     }
 
     private onWindowResize() {
-        if (!this.renderer || !this.camera) return;
+        if (!this._renderer || !this._camera) return;
         let w = innerWidth;
         let h = innerHeight;
-        this.renderer.setSize(w, h);
-        this.passes.composer.setSize(w, h);
-        this.camera.aspect = w / h;
-        this.camera.updateProjectionMatrix();
+        this._renderer.setSize(w, h);
+        this._passes.composer.setSize(w, h);
+        this._camera.aspect = w / h;
+        this._camera.updateProjectionMatrix();
         
         switch (Settings.AA_TYPE) {
             case 1:
-                this.passes.fxaaPass.material.uniforms['resolution'].value.x = 1 / (w * this.renderPixelRatio);
-                this.passes.fxaaPass.material.uniforms['resolution'].value.y = 1 / (h * this.renderPixelRatio);
+                this._passes.fxaaPass.material.uniforms['resolution'].value.x = 1 / (w * this._renderPixelRatio);
+                this._passes.fxaaPass.material.uniforms['resolution'].value.y = 1 / (h * this._renderPixelRatio);
                 break;
         }
     }
 
     private render() {
-        this.passes.composer.render();
+        this._passes.composer.render();
     }
 
     private update(dt: number) {
-        this.worldScene.update(dt);
+        this._worldScene.update(dt);
         this.render();
     }
 
     private animate() {
-        let dt = this.clock.getDelta();
+        let dt = this._clock.getDelta();
         
-        if (Settings.isDebugMode) this.stats.begin();
+        if (Settings.isDebugMode) this._stats.begin();
         this.update(dt);
-        if (Settings.isDebugMode) this.stats.end();
+        if (Settings.isDebugMode) this._stats.end();
 
         requestAnimationFrame(() => this.animate());
     }
