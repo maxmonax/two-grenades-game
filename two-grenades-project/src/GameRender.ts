@@ -8,7 +8,7 @@ import * as datGui from "dat.gui";
 import { FrontEvents } from "./events/FrontEvents";
 import { InputMng } from "./input/InputMng";
 import { DeviceInfo } from "./utils/DeviceInfo";
-import { WorldScene } from "./scenes/GameScene";
+import { GameScene } from "./game/GameScene";
 import { Settings } from "./data/Settings";
 import { LogMng } from "./utils/LogMng";
 
@@ -28,7 +28,7 @@ export class GameRender {
     private _stats: Stats;
     private _clock: THREE.Clock;
     private _renderPixelRatio = 1;
-    private _worldScene: WorldScene;
+    private _worldScene: GameScene;
 
     constructor(aDomCanvasParent: HTMLElement) {
 
@@ -135,12 +135,7 @@ export class GameRender {
     }
 
     private initGameScene() {
-        this._worldScene = new WorldScene({
-            renderer: this._renderer,
-            scene: this._scene,
-            camera: this._camera
-        });
-        this._scene.add(this._worldScene);
+        this._worldScene = new GameScene(this._renderer, this._scene, this._camera);
     }
     
     private initStats() {

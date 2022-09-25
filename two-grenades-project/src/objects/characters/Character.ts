@@ -1,5 +1,7 @@
 import * as THREE from 'three';
+import { LoopRepeat } from 'three';
 import { SkeletonUtils } from 'three/examples/jsm/utils/SkeletonUtils';
+import { Signal } from '../../events/Signal';
 import { ThreeLoader } from '../../utils/loaders/ThreeLoader';
 import { LogMng } from '../../utils/LogMng';
 
@@ -7,6 +9,10 @@ export enum CharAnimation {
     idle = 'idle',
     throw = 'throw',
     death = 'death'
+};
+
+export enum CharAnimEvent {
+    throw = 'throw'
 };
 
 export type CharacterParams = {
@@ -24,6 +30,9 @@ export class Character extends THREE.Group {
     protected _currAnimName: string;
     protected _animationStartTime: number;
     protected _action: THREE.AnimationAction;
+
+    onAnimationEventSignal = new Signal();
+    onAnimationFinishedSignal = new Signal();
 
     constructor() {
         super();
@@ -75,6 +84,9 @@ export class Character extends THREE.Group {
         this._pers.scale.set(scale, scale, scale);
         this._innerDummy.add(this._pers);
         this._mixer = new THREE.AnimationMixer(this._pers);
+        this._mixer.addEventListener('loop', () => {
+            this.onAnimationLoop();
+        });
 
     }
 
@@ -91,7 +103,13 @@ export class Character extends THREE.Group {
         animAlias: string,
         key?: string,
         newKey?: string,
-        timeScale?: number
+        timeScale?: number,
+        repeat?: number,
+        nextAnimAlias?: string,
+        timeEvents?: {
+            time: number,
+            eventName: string
+        }[]
     }) {
         let loader = ThreeLoader.getInstance();
         let model = loader.getModel(aParams.animAlias, true);
@@ -121,8 +139,13 @@ export class Character extends THREE.Group {
         this._animations[animKey] = {
             clip: anims[0],
             action: clipAction,
-            timeScale: aParams.timeScale
+            timeScale: aParams.timeScale,
+            repeat: aParams.repeat | Number.MAX_VALUE,
+            repeatCounter: 0,
+            nextAnimAlias: aParams.nextAnimAlias,
+            timeEvents: aParams.timeEvents
         };
+        
     }
 
     playAnimation(aName: string, aParams: {
@@ -138,6 +161,7 @@ export class Character extends THREE.Group {
         let clip = this._animations[aName].clip;
         let newAction = this._animations[aName].action;
         let timeScale = this._animations[aName].timeScale;
+        this._animations[aName].repeatCounter = this._animations[aName].repeat;
         if (!clip) {
             this.logWarn(`playAnimation(): undefined animation name: ${aName}`);
             return;
@@ -147,6 +171,7 @@ export class Character extends THREE.Group {
             const prevAction = this._action;
             newAction.time = 0.0;
             newAction.enabled = true;
+            newAction.timeScale = 1;
             newAction.setEffectiveTimeScale(1.0);
             newAction.setEffectiveWeight(1.0);
             newAction.crossFadeFrom(prevAction, aParams.crossTime ? aParams.crossTime : 0.5, true);
@@ -162,8 +187,43 @@ export class Character extends THREE.Group {
         this._action = newAction;
     }
 
+    private onAnimationLoop() {
+        let anim = this._animations[this._currAnimName];
+        if (anim.repeat && anim.repeatCounter > 0) {
+            let cnt = --anim.repeatCounter;
+            if (cnt <= 0) {
+                if (anim.nextAnimAlias) {
+                    anim.action.timeScale = 0;
+                    anim.action.time = anim.action.duration;
+                    this.onAnimationFinishedSignal.dispatch(this._currAnimName);
+                    this.playAnimation(anim.nextAnimAlias);
+                }
+                else {
+                    anim.action.timeScale = 0;
+                    anim.action.time = anim.action.duration;
+                    this.onAnimationFinishedSignal.dispatch(this._currAnimName);
+                }
+            }
+        }
+    }
+
     update(dt: number) {
+
         if (this._mixer) this._mixer.update(dt);
+
+        let timeEvents = this._animations[this._currAnimName].timeEvents;
+        if (timeEvents) {
+            let actTime = this._action.time;
+            for (let i = 0; i < timeEvents.length; i++) {
+                const evt = timeEvents[i];
+                if (actTime > evt.time && actTime - dt < evt.time) {
+                    // event
+                    this.onAnimationEventSignal.dispatch(evt.eventName);
+                }
+            }
+        }
+        // console.log(this._action.time);
+
     }
 
 }

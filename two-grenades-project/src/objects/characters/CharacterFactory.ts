@@ -1,5 +1,6 @@
+import { LoopOnce } from "three";
 import { ModelAlias } from "../../data/ModelData";
-import { Character, CharAnimation } from "./Character";
+import { Character, CharAnimation, CharAnimEvent } from "./Character";
 
 export class CharacterFactory {
 
@@ -18,11 +19,17 @@ export class CharacterFactory {
         });
         char.addAnimation({
             animAlias: ModelAlias.charSwatGrenadeAnim,
-            newKey: CharAnimation.throw
+            newKey: CharAnimation.throw,
+            repeat: 1,
+            nextAnimAlias: CharAnimation.idle,
+            timeEvents: [
+                { time: 3.6, eventName: CharAnimEvent.throw }
+            ]
         });
         char.addAnimation({
             animAlias: ModelAlias.charSwatDeathAnim,
-            newKey: CharAnimation.death
+            newKey: CharAnimation.death,
+            repeat: 1
         });
         
         char.playAnimation(CharAnimation.idle);
