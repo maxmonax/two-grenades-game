@@ -10,10 +10,11 @@ export class FireGrenade extends Grenade {
 
     constructor() {
         super({
-            throwForceMin: 0.3 * 7 * Settings.METER_SIZE,
-            throwForceMax: 1.5 * 7 * Settings.METER_SIZE,
-            explosionForce: 2,
-            effectName: GrenadeEffect.Fire
+            throwForceMin: 0.5 * 7 * Settings.METER_SIZE,
+            throwForceMax: 1.4 * 7 * Settings.METER_SIZE,
+            explosionRadius: 2 * Settings.METER_SIZE,
+            damage: 40,
+            effect: GrenadeEffect.Fire
         });
     }
 

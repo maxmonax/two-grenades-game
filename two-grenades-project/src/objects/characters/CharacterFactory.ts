@@ -1,5 +1,6 @@
 import { LoopOnce } from "three";
 import { ModelAlias } from "../../data/ModelData";
+import { Settings } from "../../data/Settings";
 import { Character, CharAnimation, CharAnimEvent } from "./Character";
 
 export class CharacterFactory {
@@ -10,6 +11,10 @@ export class CharacterFactory {
 
         char.init({
             modelAlias: ModelAlias.charSwat,
+            hpMax: 100,
+            hpCurrent: 100,
+            hpSpriteWidth: Settings.METER_SIZE * 0.6,
+            hpSpriteHeight: Settings.METER_SIZE * 1.8,
             scale: aScale
         });
 
@@ -47,6 +52,10 @@ export class CharacterFactory {
 
         char.init({
             modelAlias: ModelAlias.charBot,
+            hpMax: 100,
+            hpCurrent: 100,
+            hpSpriteWidth: Settings.METER_SIZE * 0.6,
+            hpSpriteHeight: Settings.METER_SIZE * 1.8,
             scale: aScale
         });
 
@@ -56,11 +65,17 @@ export class CharacterFactory {
         });
         char.addAnimation({
             animAlias: ModelAlias.charBotGrenadeAnim,
-            newKey: CharAnimation.throw
+            newKey: CharAnimation.throw,
+            repeat: 1,
+            nextAnimAlias: CharAnimation.idle,
+            timeEvents: [
+                { time: 3.6, eventName: CharAnimEvent.throw }
+            ]
         });
         char.addAnimation({
             animAlias: ModelAlias.charBotDeathAnim,
-            newKey: CharAnimation.death
+            newKey: CharAnimation.death,
+            repeat: 1
         });
 
         char.playAnimation(CharAnimation.idle);

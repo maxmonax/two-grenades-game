@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { LoopRepeat } from 'three';
 import { SkeletonUtils } from 'three/examples/jsm/utils/SkeletonUtils';
 import { Signal } from '../../events/Signal';
+import { IUpdatable } from '../../interfaces/IUpdatable';
 import { ThreeLoader } from '../../utils/loaders/ThreeLoader';
 import { LogMng } from '../../utils/LogMng';
 
@@ -17,10 +18,14 @@ export enum CharAnimEvent {
 
 export type CharacterParams = {
     modelAlias: string;
+    hpMax: number;
+    hpCurrent: number;
+    hpSpriteWidth: number;
+    hpSpriteHeight: number;
     scale?: number;
 };
 
-export class Character extends THREE.Group {
+export class Character extends THREE.Group implements IUpdatable {
 
     protected _params: CharacterParams;
     protected _innerDummy: THREE.Group;
@@ -30,6 +35,8 @@ export class Character extends THREE.Group {
     protected _currAnimName: string;
     protected _animationStartTime: number;
     protected _action: THREE.AnimationAction;
+
+    protected _hpSprite: THREE.Sprite;
 
     onAnimationEventSignal = new Signal();
     onAnimationFinishedSignal = new Signal();
@@ -60,6 +67,15 @@ export class Character extends THREE.Group {
     get animationName(): string {
         return this._currAnimName;
     }
+    
+    get hp(): number {
+        return this._params.hpCurrent;
+    }
+
+    set hp(v: number) {
+        this._params.hpCurrent = Math.max(0, v);
+        this._hpSprite.scale.x = this._params.hpSpriteWidth * this._params.hpCurrent / this._params.hpMax;
+    }
 
     init(aParams: CharacterParams) {
 
@@ -88,6 +104,16 @@ export class Character extends THREE.Group {
             // console.log(e);
             this.onAnimationLoop(e);
         });
+
+        let spMat = new THREE.SpriteMaterial({
+            color: 0xff0000
+        });
+        this._hpSprite = new THREE.Sprite(spMat);
+        this._hpSprite.position.y = aParams.hpSpriteHeight;
+        this._hpSprite.position.z = 6;
+        this._hpSprite.scale.y = 2;
+        this.hp = this._params.hpCurrent;
+        this._innerDummy.add(this._hpSprite);
 
     }
 

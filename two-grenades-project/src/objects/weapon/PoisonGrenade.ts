@@ -4,16 +4,17 @@ import { TextureAlias } from '../../data/TextureData';
 import { ParticleSystem } from '../../effects/ParticleSystem';
 import { FrontEvents } from '../../events/FrontEvents';
 import { ThreeLoader } from '../../utils/loaders/ThreeLoader';
-import { Grenade, GrenadeEffect } from './Grenade';
+import { Grenade, GrenadeEffect, GrenadeState } from './Grenade';
 
 export class PoisonGrenade extends Grenade {
 
     constructor() {
         super({
-            throwForceMin: 0.3 * 10 * Settings.METER_SIZE,
-            throwForceMax: 1.5 * 10 * Settings.METER_SIZE,
-            explosionForce: 2,
-            effectName: GrenadeEffect.Poison
+            throwForceMin: 0.5 * 6 * Settings.METER_SIZE,
+            throwForceMax: 1.5 * 6 * Settings.METER_SIZE,
+            explosionRadius: 2 * Settings.METER_SIZE,
+            damage: 60,
+            effect: GrenadeEffect.Poison
         });
     }
 
@@ -71,6 +72,57 @@ export class PoisonGrenade extends Grenade {
 
     explode(aParent: THREE.Object3D, aCamera: THREE.Camera) {
         
+        this._trailEffect.activated = false;
+        this._mesh.visible = false;
+
+        this._state = GrenadeState.Explosion;
+
+        // effect
+
+        const dtVelocity = 180;
+
+        this._explosionEffect = new ParticleSystem({
+
+            texture: ThreeLoader.getInstance().getTexture(TextureAlias.particleCircle),
+            onWindowResizeSignal: FrontEvents.onWindowResizeSignal,
+            parent: aParent,
+            camera: aCamera,
+            frequency: 1000,
+            lifeTime: .3,
+            size: { min: 0.1, max: 1. },
+
+            position: this.position.clone(),
+            deltaPosition: {
+                x: { min: -1, max: 1 },
+                y: { min: -1, max: 1 },
+                z: { min: -1, max: 1 }
+            },
+
+            velocity: new THREE.Vector3(0, 0, 0),
+            deltaVelocity: {
+                x: { min: -dtVelocity, max: dtVelocity },
+                y: { min: -dtVelocity, max: dtVelocity },
+                z: { min: -dtVelocity, max: dtVelocity }
+            },
+
+            color: 0x00ff00,
+            alphaChange: [
+                { t: 0, val: 1 },
+                { t: 0.5, val: 1 },
+                { t: 1.0, val: 0 }
+            ],
+            scaleFactorChange: [
+                { t: 0, val: 2 },
+                { t: 0.5, val: 1 },
+                { t: 1, val: 0 },
+            ]
+
+        });
+
+        setTimeout(() => {
+            this._explosionEffect.activated = false;
+        }, 100);
+
     }
     
 }

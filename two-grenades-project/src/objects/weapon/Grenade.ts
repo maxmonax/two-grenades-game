@@ -17,8 +17,9 @@ export enum GrenadeState {
 export type GrenadeParams = {
     throwForceMin: number;
     throwForceMax: number;
-    explosionForce: number;
-    effectName: GrenadeEffect;
+    explosionRadius: number;
+    damage: number;
+    effect: GrenadeEffect;
 };
 
 export abstract class Grenade extends THREE.Group implements IUpdatable {
@@ -45,11 +46,15 @@ export abstract class Grenade extends THREE.Group implements IUpdatable {
     }
     
     public get explosionForce(): number {
-        return this._params.explosionForce;
+        return this._params.explosionRadius;
+    }
+
+    public get damage(): number {
+        return this._params.damage;
     }
 
     public get effectName(): GrenadeEffect {
-        return this._params.effectName;
+        return this._params.effect;
     }
     
     public get state(): string {
@@ -62,8 +67,17 @@ export abstract class Grenade extends THREE.Group implements IUpdatable {
     
     abstract explode(aParent: THREE.Object3D, aCamera: THREE.Camera);
 
+    free() {
+        this._mesh.parent?.remove(this._mesh);
+        this._mesh = null;
+        this._trailEffect.free();
+        this._trailEffect = null;
+        this._explosionEffect.free();
+        this._explosionEffect = null;
+    }
+
     update(dt: number) {
-        
+
         if (this._trailEffect) {
             this._trailEffect.position.copy(this.position);
             this._trailEffect.update(dt);

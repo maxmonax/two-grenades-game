@@ -10,7 +10,6 @@ import { LightFactory } from '../objects/lights/LightFactory';
 import { SunLight } from '../objects/lights/SunLight';
 import { GameLocation } from '../objects/location/GameLocation';
 import { ThreeLoader } from '../utils/loaders/ThreeLoader';
-import { InputMng } from '../input/InputMng';
 import { Signal } from '../events/Signal';
 import { LogMng } from '../utils/LogMng';
 import { Grenade, GrenadeEffect } from '../objects/weapon/Grenade';
@@ -18,6 +17,7 @@ import { FireGrenade } from '../objects/weapon/FireGrenade';
 import { IceGrenade } from '../objects/weapon/IceGrenade';
 import { PoisonGrenade } from '../objects/weapon/PoisonGrenade';
 import { IUpdatable } from '../interfaces/IUpdatable';
+import { WeaponFactory } from '../objects/weapon/WeaponFactory';
 
 type GameViewParams = {
     renderer: THREE.Renderer,
@@ -33,7 +33,6 @@ export class GameView {
     private _cameraTarget: THREE.Vector3;
     // environment
     private _sunDirLight: SunLight;
-    private _ambientLight: THREE.AmbientLight;
     // main container
     private _groupMain: THREE.Group;
     // game objects
@@ -45,10 +44,8 @@ export class GameView {
 
     private _gui: GameGui;
 
-    onInputDownSignal = new Signal();
-    onInputUpSignal = new Signal();
     onPlayerThrowActionSignal = new Signal();
-
+    onEnemyThrowActionSignal = new Signal();
 
     constructor(aParams: GameViewParams) {
 
@@ -98,11 +95,11 @@ export class GameView {
     private initEnvironment() {
 
         // ambient light
-        this._ambientLight = LightFactory.getAmbientLight({
+        let ambientLight = LightFactory.getAmbientLight({
             color: 0xFFFFFF,
             intensity: 0.4
         });
-        this._groupMain.add(this._ambientLight);
+        this._groupMain.add(ambientLight);
 
         // sun light
         this._sunDirLight = LightFactory.getSunLight({
@@ -132,11 +129,6 @@ export class GameView {
         land.position.set(0, 0, 0);
         this._groupMain.add(land);
 
-        if (Settings.isDebugMode) {
-            let axHelper = new THREE.AxesHelper(Settings.METER_SIZE * 50);
-            this._groupMain.add(axHelper);
-        }
-
         // indicator
         let indicatorGeom = new THREE.CylinderGeometry(Settings.METER_SIZE * 0.05, Settings.METER_SIZE * 0.05,
             this._indicatorSize);
@@ -159,11 +151,13 @@ export class GameView {
         this._playerPers.position.set(-DIST, 0, 0);
         this._playerPers.rotation.y = Math.PI / 2;
         this._groupMain.add(this._playerPers);
+        this._objects.push(this._playerPers);
 
         this._enemyPers = CharacterFactory.getEnemyCharacter(CHARACTER_SCALE);
         this._enemyPers.position.set(DIST, 0, 0);
         this._enemyPers.rotation.y = -Math.PI / 2;
         this._groupMain.add(this._enemyPers);
+        this._objects.push(this._enemyPers);
 
     }
 
@@ -177,20 +171,8 @@ export class GameView {
             this.updateCameraFov();
         }, this);
 
-        let inMng = InputMng.getInstance();
-        inMng.onInputDownSignal.add(this.onInputDown, this);
-        inMng.onInputUpSignal.add(this.onInputUp, this);
-
     }
 
-    private onInputDown() {
-        this.onInputDownSignal.dispatch();
-    }
-
-    private onInputUp() {
-        this.onInputUpSignal.dispatch();
-    }
-    
     private updateCameraFov() {
         const values = [
             { ar: .4, fov: 110 },
@@ -218,6 +200,25 @@ export class GameView {
         return this._gui.grenadeEffect;
     }
 
+    get guiRestartSignal(): Signal {
+        return this._gui.onRestartClickSignal;
+    }
+
+    restart() {
+        this._playerPers.hp = this._playerPers.params.hpMax;
+        this._playerPers.playAnimation(CharAnimation.idle);
+        this._enemyPers.hp = this._enemyPers.params.hpMax;
+        this._enemyPers.playAnimation(CharAnimation.idle);
+    }
+
+    getPlayerPers(): Character {
+        return this._playerPers;
+    }
+
+    getEnemyPers(): Character {
+        return this._enemyPers;
+    }
+
     cameraInitAnimation(cb?: Function, ctx?: any) {
 
         // camera animation
@@ -240,21 +241,34 @@ export class GameView {
     }
 
     playerThrowAnim() {
-
-        console.log(`playerThrowAnim...`);
-
         this._playerPers.onAnimationEventSignal.addOnce((aEventName: string) => {
             if (aEventName == CharAnimEvent.throw) {
                 this.onPlayerThrowActionSignal.dispatch();
             }
         });
         this._playerPers.playAnimation(CharAnimation.throw);
+    }
 
+    enemyThrowAnim() {
+        this._enemyPers.onAnimationEventSignal.addOnce((aEventName: string) => {
+            if (aEventName == CharAnimEvent.throw) {
+                this.onEnemyThrowActionSignal.dispatch();
+            }
+        });
+        this._enemyPers.playAnimation(CharAnimation.throw);
     }
 
     getPlayerGrenadeReleasePos(): THREE.Vector3 {
         let res = this._playerPers.position.clone();
         res.x += Settings.METER_SIZE * 0.8;
+        res.y += Settings.METER_SIZE;
+        res.z -= Settings.METER_SIZE * 0.2;
+        return res;
+    }
+
+    getEnemyGrenadeReleasePos(): THREE.Vector3 {
+        let res = this._enemyPers.position.clone();
+        res.x -= Settings.METER_SIZE * 0.8;
         res.y += Settings.METER_SIZE;
         res.z -= Settings.METER_SIZE * 0.2;
         return res;
@@ -272,57 +286,36 @@ export class GameView {
 
     addGrenade(aEffect: GrenadeEffect, aPos: THREE.Vector3): Grenade {
 
-        let grena: Grenade;
-
-        switch (aEffect) {
-
-            case GrenadeEffect.Fire:
-                grena = new FireGrenade();
-                grena.position.copy(aPos);
-                this._groupMain.add(grena);
-                break;
-            
-            case GrenadeEffect.Ice:
-                grena = new IceGrenade();
-                grena.position.copy(aPos);
-                this._groupMain.add(grena);
-                break;
-            
-            case GrenadeEffect.Poison:
-                grena = new PoisonGrenade();
-                grena.position.copy(aPos);
-                this._groupMain.add(grena);
-                break;
-            
-            default:
-                this.logWarn(`addGrenade -> Unknown grenade effect: ${aEffect}`);
-                break;
-            
-        }
-
+        let grena = WeaponFactory.getGrenadeByEffect(aEffect);
+        grena.position.copy(aPos);
+        this._groupMain.add(grena);
         grena.createTrailEffect(this._groupMain, this._camera);
         this._objects.push(grena);
-
         return grena;
+
     }
 
     explodeGrenade(aGrenade: Grenade) {
         aGrenade.explode(this._groupMain, this._camera);
     }
 
+    setPlayerHp(aHpPercent: number) {
+        this._playerPers.hp = aHpPercent;
+    }
+
+    setEnemyHp(aHpPercent: number) {
+        this._enemyPers.hp = aHpPercent;
+    }
+
     update(dt: number) {
 
-        // personages
-        if (this._playerPers) this._playerPers.update(dt);
-        if (this._enemyPers) this._enemyPers.update(dt);
-
-        // sun
-        this._sunDirLight.updatePosition(this._camera.position);
-
-        // effects
+        // objects
         for (let i = 0; i < this._objects.length; i++) {
             this._objects[i].update(dt);
         }
+
+        // sun
+        this._sunDirLight.updatePosition(this._camera.position);
 
     }
 

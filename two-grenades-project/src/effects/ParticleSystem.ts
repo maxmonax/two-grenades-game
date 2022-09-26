@@ -87,6 +87,7 @@ export class ParticleSystem {
     private _startScale = 1;
     private _prevPosition: THREE.Vector3;
 
+    private _destroyed = false;
     activated = false;
 
     constructor(aParams: ParticleSystemParams) {
@@ -288,6 +289,7 @@ export class ParticleSystem {
     }
     
     free() {
+        this._destroyed = true;
         this.activated = false;
         this._params.onWindowResizeSignal.remove(this.onWindowResize, this);
         this._particles = [];
@@ -303,6 +305,8 @@ export class ParticleSystem {
     }
 
     update(dt: number) {
+
+        if (this._destroyed) return;
 
         if (this.activated) {
             let tr = 1 / this._params.frequency;
