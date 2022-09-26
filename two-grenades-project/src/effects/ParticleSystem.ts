@@ -87,7 +87,10 @@ export class ParticleSystem {
     private _startScale = 1;
     private _prevPosition: THREE.Vector3;
 
+    activated = false;
+
     constructor(aParams: ParticleSystemParams) {
+
         this._params = aParams;
 
         if (!this._params.position) this._params.position = new THREE.Vector3();
@@ -151,6 +154,8 @@ export class ParticleSystem {
             }
             this._startScale = this._params.scaleFactorChange[0].val;
         }
+
+        this.activated = true;
 
         this._params.onWindowResizeSignal.add(this.onWindowResize, this);
     }
@@ -278,7 +283,12 @@ export class ParticleSystem {
         }
     }
     
+    public get particlesCount(): number {
+        return this._particles.length;
+    }
+    
     free() {
+        this.activated = false;
         this._params.onWindowResizeSignal.remove(this.onWindowResize, this);
         this._particles = [];
         this.updateGeometry();
@@ -293,15 +303,20 @@ export class ParticleSystem {
     }
 
     update(dt: number) {
-        let tr = 1 / this._params.frequency;
-        this._addParticleTime += dt;
-        if (this._addParticleTime >= tr) {
-            let cnt = Math.floor(this._addParticleTime / tr);
-            this.addParticles(cnt, this._addParticleTime);
-            this._addParticleTime %= tr;
+
+        if (this.activated) {
+            let tr = 1 / this._params.frequency;
+            this._addParticleTime += dt;
+            if (this._addParticleTime >= tr) {
+                let cnt = Math.floor(this._addParticleTime / tr);
+                this.addParticles(cnt, this._addParticleTime);
+                this._addParticleTime %= tr;
+            }
         }
+
         this.updateParticles(dt);
         this.updateGeometry();
+        
     }
 
 

@@ -16,7 +16,7 @@ export enum CharAnimEvent {
 };
 
 export type CharacterParams = {
-    modelAlias: string,
+    modelAlias: string;
     scale?: number;
 };
 
@@ -84,8 +84,9 @@ export class Character extends THREE.Group {
         this._pers.scale.set(scale, scale, scale);
         this._innerDummy.add(this._pers);
         this._mixer = new THREE.AnimationMixer(this._pers);
-        this._mixer.addEventListener('loop', () => {
-            this.onAnimationLoop();
+        this._mixer.addEventListener('loop', (e) => {
+            // console.log(e);
+            this.onAnimationLoop(e);
         });
 
     }
@@ -159,7 +160,7 @@ export class Character extends THREE.Group {
             return;
         }
         let clip = this._animations[aName].clip;
-        let newAction = this._animations[aName].action;
+        let newAction: THREE.AnimationAction = this._animations[aName].action;
         let timeScale = this._animations[aName].timeScale;
         this._animations[aName].repeatCounter = this._animations[aName].repeat;
         if (!clip) {
@@ -169,11 +170,11 @@ export class Character extends THREE.Group {
 
         if (this._action) {
             const prevAction = this._action;
-            newAction.time = 0.0;
             newAction.enabled = true;
             newAction.timeScale = 1;
             newAction.setEffectiveTimeScale(1.0);
             newAction.setEffectiveWeight(1.0);
+            newAction.time = 0;
             newAction.crossFadeFrom(prevAction, aParams.crossTime ? aParams.crossTime : 0.5, true);
             if (timeScale != null) newAction['timeScale'] = timeScale;
             newAction.play();
@@ -187,8 +188,23 @@ export class Character extends THREE.Group {
         this._action = newAction;
     }
 
-    private onAnimationLoop() {
-        let anim = this._animations[this._currAnimName];
+    private onAnimationLoop(aData) {
+        let action: THREE.AnimationAction = aData.action;
+        if (!action) return;
+
+        // get animation data
+        let anim: any;
+
+        for (const key in this._animations) {
+            const element = this._animations[key];
+            if (element.action == action) {
+                anim = element;
+                break;
+            }
+        }
+
+        if (!anim) return;
+
         if (anim.repeat && anim.repeatCounter > 0) {
             let cnt = --anim.repeatCounter;
             if (cnt <= 0) {

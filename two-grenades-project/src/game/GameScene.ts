@@ -36,7 +36,7 @@ export class GameScene {
         // init model
         this._model = new GameData({
             view: this._view,
-            grenadeForceMax: 10
+            grenadeForceMax: 5
         });
 
         this.initEvents();
@@ -70,6 +70,11 @@ export class GameScene {
             this._model.grenadeForce = 0;
             this._model.isGrenadeActivated = true;
 
+            this._view.updatePlayerForceIndicator({
+                progress: 0,
+                visible: true
+            });
+
             this._view.onInputUpSignal.addOnce(() => {
                 this._model.isGrenadeActivated = false;
                 this._fsm.startState(States.PlayerThrow);
@@ -78,10 +83,15 @@ export class GameScene {
         });
 
     }
-
+    
     private statePlayerTurnUpdate(dt: number) {
 
         this._model.update(dt);
+
+        this._view.updatePlayerForceIndicator({
+            progress: this._model.grenadeForce / this._model.grenadeForceMax,
+            visible: true
+        });
 
         if (this._model.isGrenadeActivated && this._model.grenadeForce == this._model.grenadeForceMax) {
             this._model.isGrenadeActivated = false;
@@ -94,6 +104,10 @@ export class GameScene {
         
         this._view.onPlayerThrowActionSignal.addOnce(() => {
             LogMng.debug('throw grenade!');
+            this._model.addGrenade(
+                this._view.guiGrenadeEffect, 
+                this._view.getPlayerGrenadeReleasePos()
+            );
         });
         this._view.playerThrowAnim();
 
