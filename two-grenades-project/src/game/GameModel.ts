@@ -115,7 +115,7 @@ export class GameModel {
                             // check enemy
                             let enemyPers = this._view.getEnemyPers();
                             let dist = grenaObj.position.distanceTo(enemyPers.position);
-                            if (dist < Settings.METER_SIZE * 2) {
+                            if (dist < grenaObj.explosionRadius) {
                                 // damage
                                 enemyPers.hp -= grenaObj.damage;
                                 LogMng.debug(`Enemy get a Damage ${grenaObj.damage}`);
@@ -125,7 +125,7 @@ export class GameModel {
                             // check player
                             let playerPers = this._view.getPlayerPers();
                             let dist = grenaObj.position.distanceTo(playerPers.position);
-                            if (dist < Settings.METER_SIZE * 2) {
+                            if (dist < grenaObj.explosionRadius) {
                                 // damage
                                 playerPers.hp -= grenaObj.damage;
                                 LogMng.debug(`Player get a Damage ${grenaObj.damage}`);

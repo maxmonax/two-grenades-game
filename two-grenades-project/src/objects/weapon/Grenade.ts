@@ -45,7 +45,7 @@ export abstract class Grenade extends THREE.Group implements IUpdatable {
         return this._params.throwForceMax;
     }
     
-    public get explosionForce(): number {
+    public get explosionRadius(): number {
         return this._params.explosionRadius;
     }
 
