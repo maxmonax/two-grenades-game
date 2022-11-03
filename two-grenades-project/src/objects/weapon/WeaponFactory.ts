@@ -1,6 +1,3 @@
-import { LoopOnce } from "three";
-import { ModelAlias } from "../../data/ModelData";
-import { Settings } from "../../data/Settings";
 import { FireGrenade } from "./FireGrenade";
 import { Grenade, GrenadeEffect } from "./Grenade";
 import { IceGrenade } from "./IceGrenade";
